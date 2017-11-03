@@ -3,6 +3,7 @@
 #include <dirent.h>
 #include <errno.h>
 #include <string.h>
+#include <sys/stat.h>
 
 int main(){
 	DIR *dir = opendir("./");
@@ -49,14 +50,25 @@ int main(){
 		printf("error: %s\n", strerror(errno));
 		exit(1);
 	}
-	int total = 0;
+	long total = 0;
+	struct stat sb;
+	off_t size;
 	while(entry = readdir(dir)){
 		if(entry->d_type == DT_REG){
-			printf("%s is %d bytes.\n", entry->d_name, entry->d_reclen);
-			total += entry->d_reclen;
+			stat(entry->d_name, &sb);
+			size = sb.st_size;
+			printf("%s is %ld bytes.\n", entry->d_name, size);
+			total += size;
 		}
 	}
-	printf("total size:%dB\n", total);
+	if(total >= 1073741824)
+		printf("total size:%ldGB\n", total/1073741824);
+	else if(total >= 1048576)
+		printf("total size:%ldMB\n", total/1048576);
+	else if(total >= 1024)
+		printf("total size:%ldKB\n", total/1024);
+	else
+		printf("total size:%ldB\n", total);
 	if (closedir(dir) < 0){
 		printf("errno: %d\n", errno);
 		printf("error: %s\n", strerror(errno));
